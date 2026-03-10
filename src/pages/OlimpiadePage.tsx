@@ -59,7 +59,7 @@ const OlimpiadePage = () => {
 
         <div className="flex flex-col gap-3 animate-slide-up">
           {olimpiadeTopics.map((topik, i) => {
-            const hasContent = topik === "Bilangan Bulat" || topik === "Bilangan Rasional";
+            const hasContent = topik === "Bilangan Bulat" || topik === "Bilangan Rasional" || topik === "Bilangan Berpangkat";
             return (
               <button
                 key={topik}
@@ -69,6 +69,8 @@ const OlimpiadePage = () => {
                     navigate("/olimpiade/bilangan-bulat");
                   } else if (topik === "Bilangan Rasional") {
                     navigate("/olimpiade/bilangan-rasional");
+                  } else if (topik === "Bilangan Berpangkat") {
+                    navigate("/olimpiade/bilangan-berpangkat");
                   }
                 }}
                 className="group flex items-center gap-4 bg-card/80 backdrop-blur border border-border rounded-xl px-5 py-4
