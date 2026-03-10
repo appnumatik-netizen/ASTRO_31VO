@@ -1,5 +1,4 @@
 import {
-  consumeStream,
   convertToModelMessages,
   streamText,
   UIMessage,
@@ -7,7 +6,7 @@ import {
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 export const config = {
-  maxDuration: 30,
+  maxDuration: 60,
 }
 
 const NUMATIK_SYSTEM_PROMPT = `[IDENTITY & BRANDING]
@@ -49,25 +48,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: await convertToModelMessages(messages),
     })
 
-    // Set SSE headers
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
-    const stream = result.toUIMessageStream({
-      originalMessages: messages,
-      consumeSseStream: consumeStream,
+    // Get the response and pipe to Vercel response
+    const response = result.toUIMessageStreamResponse()
+    
+    // Copy headers
+    response.headers.forEach((value, key) => {
+      res.setHeader(key, value)
     })
 
-    const reader = stream.getReader()
-    
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      
-      // Convert chunk to string and write as SSE
-      const text = new TextDecoder().decode(value)
-      res.write(text)
+    // Stream the body
+    if (response.body) {
+      const reader = response.body.getReader()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        res.write(value)
+      }
     }
     
     res.end()
