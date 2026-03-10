@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Starfield from "@/components/Starfield";
 import PageNavigation from "@/components/PageNavigation";
 import ChatMessage from "@/components/ChatMessage";
-import { Bot, Send, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Trash2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { playPopSound } from "@/hooks/useAudio";
 import { useChat } from "@ai-sdk/react";
@@ -16,8 +16,11 @@ const ChatAIPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+  // Memoize transport to prevent recreation on every render
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+
+  const { messages, sendMessage, status, setMessages, error } = useChat({
+    transport,
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -95,7 +98,20 @@ const ChatAIPage = () => {
         <div className="flex-1 bg-card/40 backdrop-blur-md border border-border/50 rounded-t-2xl overflow-hidden flex flex-col">
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4">
-            {messages.length === 0 ? (
+            {/* Error Display */}
+            {error && (
+              <div className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">Terjadi Kesalahan</p>
+                  <p className="text-xs text-destructive/80 mt-1">
+                    {error.message || "Tidak dapat terhubung ke NUMATIK AI. Silakan coba lagi."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {messages.length === 0 && !error ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-12">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600/20 to-blue-500/20 flex items-center justify-center border border-purple-500/30 mb-6">
                   <Sparkles className="w-10 h-10 text-purple-400" />
@@ -129,7 +145,7 @@ const ChatAIPage = () => {
                   ))}
                 </div>
               </div>
-            ) : (
+            ) : messages.length > 0 ? (
               <div className="space-y-4">
                 {messages.map((message) => (
                   <ChatMessage
@@ -155,7 +171,7 @@ const ChatAIPage = () => {
                 )}
                 <div ref={messagesEndRef} />
               </div>
-            )}
+            ) : null}
           </ScrollArea>
 
           {/* Input Area */}
