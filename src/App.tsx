@@ -20,6 +20,7 @@ import OlimpiadeBilanganBerpangkatPage from "./pages/OlimpiadeBilanganBerpangkat
 import TKAPage from "./pages/TKAPage";
 import PapanPeringkatPage from "./pages/PapanPeringkatPage";
 import BankSoalPage from "./pages/BankSoalPage";
+import BankSoalBilanganBulatPage from "./pages/bank-soal/BilanganBulatPage";
 import ChatAIPage from "./pages/ChatAIPage";
 import PengaturanPage from "./pages/PengaturanPage";
 import TentangAplikasiPage from "./pages/TentangAplikasiPage";
@@ -199,6 +200,7 @@ const AppInner = () => {
       <Route path="/tka" element={<TKAPage />} />
       <Route path="/papan-peringkat" element={<PapanPeringkatPage />} />
       <Route path="/bank-soal" element={<BankSoalPage />} />
+      <Route path="/bank-soal/bilangan-bulat" element={<BankSoalBilanganBulatPage />} />
       <Route path="/chat-ai" element={<ChatAIPage />} />
       <Route path="/pengaturan" element={<PengaturanPage />} />
       <Route path="/tentang-aplikasi" element={<TentangAplikasiPage />} />
