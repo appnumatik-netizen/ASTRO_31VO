@@ -1,9 +1,9 @@
 import {
+  consumeStream,
   convertToModelMessages,
   streamText,
   UIMessage,
 } from 'ai'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 export const config = {
   maxDuration: 60,
@@ -34,41 +34,38 @@ Jika siswa salah menjawab, jangan katakan "Salah", tapi katakan "Hampir tepat! A
 [GREETING]
 Sapa pengguna dengan ramah dan perkenalkan diri sebagai NUMATIK AI, asisten matematika mereka di Math Space.`
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: Request) {
+  // Only accept POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   try {
-    const { messages }: { messages: UIMessage[] } = req.body
+    const { messages }: { messages: UIMessage[] } = await req.json()
 
     const result = streamText({
       model: 'google/gemini-2.5-flash-preview-05-20',
       system: NUMATIK_SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
+      abortSignal: req.signal,
     })
 
-    // Get the response and pipe to Vercel response
-    const response = result.toUIMessageStreamResponse()
-    
-    // Copy headers
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value)
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      consumeSseStream: consumeStream,
     })
-
-    // Stream the body
-    if (response.body) {
-      const reader = response.body.getReader()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        res.write(value)
-      }
-    }
-    
-    res.end()
   } catch (error) {
     console.error('Chat API error:', error)
-    return res.status(500).json({ error: 'Internal server error' })
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 }
+
+// Export for both named and default (Vercel serverless compatibility)
+export const POST = handler
+export default handler
